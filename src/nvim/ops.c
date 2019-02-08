@@ -1322,6 +1322,7 @@ int op_delete(oparg_T *oap)
   char_u              *newp, *oldp;
   struct block_def bd;
   linenr_T old_lcount = curbuf->b_ml.ml_line_count;
+  yankreg_T *reg = NULL;
 
   if (curbuf->b_ml.ml_flags & ML_EMPTY) {  // nothing to do
     return OK;
@@ -1385,20 +1386,20 @@ int op_delete(oparg_T *oap)
    * If a yank register was specified, put the deleted text into that
    * register.  For the black hole register '_' don't yank anything.
    */
-  if (oap->regname != '_') {
-    yankreg_T *reg = NULL;
-    if (oap->regname != 0) {
-      //yank without message
-      if (!op_yank(oap, false)) {
-        // op_yank failed, don't do anything
-        return OK;
-      }
+  if (oap->regname != 0) {
+    //yank without message
+    if (!op_yank(oap, false)) {
+      // op_yank failed, don't do anything
+      return OK;
     }
+  }
 
-    /*
-     * Put deleted text into register 1 and shift number registers if the
-     * delete contains a line break, or when a regname has been specified.
-     */
+  /*
+   * If the black hole register '_' isn't specified,
+   * put deleted text into register 1 and shift number registers if the
+   * delete contains a line break, or when a regname has been specified.
+   */
+  if (oap->regname != '_') {
     if (oap->regname != 0 || oap->motion_type == kMTLineWise
         || oap->line_count > 1 || oap->use_reg_one) {
       free_register(&y_regs[9]); /* free register "9 */
@@ -1409,23 +1410,23 @@ int op_delete(oparg_T *oap)
       reg = &y_regs[1];
       op_yank_reg(oap, false, reg, false);
     }
+  }
 
-    /* Yank into small delete register when no named register specified
-     * and the delete is within one line. */
-    if (oap->regname == 0 && oap->motion_type != kMTLineWise
-        && oap->line_count == 1) {
-      reg = get_yank_register('-', YREG_YANK);
-      op_yank_reg(oap, false, reg, false);
+  /*
+   * Yank into small delete register when no named register specified
+   * or the black hole register '_' is specified.
+   */
+  if (oap->regname == 0 || oap->regname == '_') {
+    reg = get_yank_register('-', YREG_YANK);
+    op_yank_reg(oap, false, reg, false);
+  }
+
+  if (oap->regname == 0) {
+    if (reg == NULL) {
+      abort();
     }
-
-    if (oap->regname == 0) {
-      if (reg == NULL) {
-        abort();
-      }
-      set_clipboard(0, reg);
-      do_autocmd_textyankpost(oap, reg);
-    }
-
+    set_clipboard(0, reg);
+    do_autocmd_textyankpost(oap, reg);
   }
 
   /*

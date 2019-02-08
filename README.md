@@ -17,6 +17,16 @@
 [![Debian CI](https://badges.debian.net/badges/debian/testing/neovim/version.svg)](https://buildd.debian.org/neovim)
 [![Downloads](https://img.shields.io/github/downloads/neovim/neovim/total.svg?maxAge=2592001)](https://github.com/neovim/neovim/releases/)
 
+**Note**: This fork changes the black hole register `"_` slightly so that using
+it automatically sends the contents, which would normally simply be discarded,
+to the delete register `"-`. This is so it behaves more like Drew Neil's
+[cutlass.vim](https://github.com/nelstrom/vim-cutlass) proposals when used in conjunction with Steve Vermeulen's [vim-cutlass](https://github.com/svermeulen/vim-cutlass) and [vim-yoink](https://github.com/svermeulen/vim-yoink).
+Specifically, I wanted a way for deleted text to be written _only_ to the delete
+register without it also being written registers 1 through 9 as usual. I
+couldn't find a way to do that with just vim-cutlass, and this current solution
+may be half-baked or have other ramifications I haven't considered, and there
+are probably better, plugin-oriented approaches as well, so comments welcome.
+
 Neovim is a project that seeks to aggressively refactor Vim in order to:
 
 - Simplify maintenance and encourage [contributions](CONTRIBUTING.md)
